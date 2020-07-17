@@ -1,26 +1,66 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { Component } from 'react'
+import TrelloList from './component/TrelloList'
+import { connect } from 'react-redux'
+import TrelloActionBtn from './component/TrelloActionBtn'
+import { DragDropContext, Droppable } from 'react-beautiful-dnd'
+import { sort } from './action'
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+class App extends Component {
+  onDragEnd = (result) => {
+    const { destination, source, draggableId, type } = result
+
+    if (!destination) {
+      return
+    }
+
+    this.props.dispatch(
+      sort(
+        source.droppableId,
+        destination.droppableId,
+        source.index,
+        destination.index,
+        draggableId,
+        type
+      )
+    )
+  }
+
+  render() {
+    const { lists } = this.props
+
+    return (
+      <DragDropContext onDragEnd={this.onDragEnd}>
+        <Droppable droppableId='all-lists' direction='horizontal' type='list'>
+          {(provided) => (
+            <div
+              className='container'
+              {...provided.droppableProps}
+              ref={provided.innerRef}
+            >
+              {lists.map((item, index) => (
+                <TrelloList
+                  id={item.id}
+                  title={item.title}
+                  cards={item.cards}
+                  key={item.id}
+                  index={index}
+                />
+              ))}
+              {provided.placeholder}
+              <div className='list-container'>
+                <TrelloActionBtn list />
+              </div>
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
+    )
+  }
+}
+const mapStateToProps = (state) => {
+  return {
+    lists: state.list,
+  }
 }
 
-export default App;
+export default connect(mapStateToProps)(App)
